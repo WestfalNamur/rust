@@ -65,4 +65,43 @@ fn main() {
     // we have to express our intent; We "clone" s3;
     let s5 = s4.clone();
     println!("{}", s5);
+
+    // ************************************************************************
+    //
+    // Ownership and functions
+    // Passing a variable to a function will move or copy, just as assignment does;
+    //
+    // We pass a String (content on heap, pointer on stack) to the function;
+    // The function takes ownership of the string; s6 is this no longer valid;
+    let s6 = String::from("Hello!");
+    takes_ownership(s6);
+    // We pass an int32 (known size and immutable, stored on the stack) to the
+    // function, a copy is made. x is still valid;
+    let x = 5;
+    makes_copy(x);
+    //
+    // Return values and scope
+    // Last expression of function is returned and bound to _s7;
+    let _s7 = gives_ownership();
+    //
+    // s8 is passed to fn which takes ownership; s8 is droped; The last
+    // expression is returned and bound to _s9;
+    let s8 = String::from("Hello!");
+    let _s9 = takes_and_gives_ownership(s8);
+}
+
+fn takes_ownership(str: String) {
+    println!("{}", str);
+}
+
+fn makes_copy(int: i32) {
+    println!("{}", int);
+}
+
+fn gives_ownership() -> String {
+    let s10 = String::from("hello");
+    s10
+}
+fn takes_and_gives_ownership(str: String) -> String {
+    str
 }
