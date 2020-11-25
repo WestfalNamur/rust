@@ -19,6 +19,7 @@ fn main() {
         Quarter(UsState),
     }
 
+    // * Match ****************************************************************
     fn value_in_cents(coin: Coin) -> u8 {
         match coin {
             Coin::Penny => 1,
@@ -45,5 +46,16 @@ fn main() {
         5 => println!("five"),
         7 => println!("seven"),
         _ => (), // Other
+    }
+
+    // * if let ***************************************************************
+    // if let means less typing, less indentation, and less boilerplate code.
+    // However, you lose the exhaustive checking that match enforces.
+    let coin = Coin::Penny;
+    let mut count = 0;
+    if let Coin::Quarter(state) = coin {
+        println!("State quarter from {:?}!", state);
+    } else {
+        count += 1;
     }
 }
