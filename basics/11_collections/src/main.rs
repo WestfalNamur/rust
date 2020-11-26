@@ -69,5 +69,4 @@ fn main() {
     }
 
     println!("{:?}", map);
-
 }
