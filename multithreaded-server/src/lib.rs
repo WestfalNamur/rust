@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::sync::mpsc;
+use std::sync::Arc;
 use std::sync::Mutex;
 use std::thread;
 
@@ -15,31 +15,31 @@ impl<F: FnOnce()> FnBox for F {
 
 struct Worker {
     id: usize,
-    thread: Option<thread::JoinHandle<()>>
+    thread: Option<thread::JoinHandle<()>>,
 }
 
 impl Worker {
     fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Message>>>) -> Worker {
-        let thread = thread::spawn(move || {
-            loop {
-                let message = receiver.lock().unwrap().recv().unwrap();
+        let thread = thread::spawn(move || loop {
+            let message = receiver.lock().unwrap().recv().unwrap();
 
-                match message {
-                    Message::NewJob(job) => {
-                        println!("Worker {} got a job; executing.", id);
-                        job.call_box();
-                    },
-                    Message::Terminate => {
-                        println!("Worker {} was told to terminate.", id);
-                        break;
-                    }
+            match message {
+                Message::NewJob(job) => {
+                    println!("Worker {} got a job; executing.", id);
+                    job.call_box();
+                }
+                Message::Terminate => {
+                    // Break the loop to stop the main thread from running
+                    // forever even if we called drop;
+                    println!("Worker {} was told to terminate.", id);
+                    break;
                 }
             }
         });
 
         Worker {
             id,
-            thread: Some(thread)
+            thread: Some(thread),
         }
     }
 }
@@ -48,12 +48,12 @@ type Job = Box<dyn FnBox + Send + 'static>;
 
 enum Message {
     NewJob(Job),
-    Terminate
+    Terminate,
 }
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Message>
+    sender: mpsc::Sender<Message>,
 }
 
 impl ThreadPool {
@@ -66,6 +66,8 @@ impl ThreadPool {
     pub fn new(size: usize) -> ThreadPool {
         assert!(size > 0);
 
+        // Sender and reciever to communiacte between threads;
+        // Use of Mutex loc crucial to guarantee thread safety!
         let (sender, receiver) = mpsc::channel();
         let receiver = Arc::new(Mutex::new(receiver));
 
@@ -75,15 +77,12 @@ impl ThreadPool {
             workers.push(Worker::new(id, Arc::clone(&receiver)));
         }
 
-        ThreadPool {
-            workers,
-            sender
-        }
+        ThreadPool { workers, sender }
     }
 
     pub fn execute<F>(&self, f: F)
-        where
-            F: FnOnce() + Send + 'static
+    where
+        F: FnOnce() + Send + 'static,
     {
         let job = Box::new(f);
 
@@ -92,6 +91,10 @@ impl ThreadPool {
 }
 
 impl Drop for ThreadPool {
+    /// Drop trait
+    /// Joins threads when the pool is droped to ensure they finished thier
+    /// work;
+    /// Loops over workers twice 1st to sent Terminate msg and 2nd to join;
     fn drop(&mut self) {
         println!("Sending terminate message to all workers.");
 

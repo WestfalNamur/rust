@@ -1,15 +1,20 @@
 extern crate multithreaded_server;
 
+// Imports from src/lib.rs
 use multithreaded_server::ThreadPool;
 
 use std::fs;
 use std::io::prelude::*;
-use std::thread;
-use std::time::Duration;
 use std::net::TcpListener;
 use std::net::TcpStream;
+use std::thread;
+use std::time::Duration;
 
 fn main() {
+    /// 1. Creating a TCP listener and open it up on 127.0.0.1:7878 and generate
+    ///    a thread pool with 4 threads.
+    /// 2. Loop over incoming streams and spawn a
+    ///    thread to handle the connection.
     let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
     let pool = ThreadPool::new(4);
 
@@ -23,8 +28,14 @@ fn main() {
 }
 
 fn handle_connection(mut stream: TcpStream) {
+    /// Connection handler
+    ///
+    /// 1. Creates a buffer to read in incoming stream; Read the stream in.
+    /// 2. Declare requests header to be checked.
+    /// 3. Assing status_line, filename to either 200 or 404 depending on
+    ///    header; Sleep if header is "Sleep".
+    /// 4. Return response as bytes over TCP and close
     let mut buffer = [0; 512];
-
     stream.read(&mut buffer).unwrap();
 
     let get = b"GET / HTTP/1.1\r\n";
